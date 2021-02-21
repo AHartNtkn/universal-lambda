@@ -69,8 +69,8 @@ lamAlg f k (Var i) = f k (Left i)
 lamAlg f k (Lam r) = f k (Right $ Left r)
 lamAlg f k (App r1 r2) = f k (Right $ Right (r1, r2))
 
-lamCata :: (Integer -> LamF r -> r) -> Integer -> Lam -> r
-lamCata a k (Fix l) = a k $ lamFMap k (lamCata a) l
+lamFold :: (Integer -> LamF r -> r) -> Integer -> Lam -> r
+lamFold a k (Fix l) = a k $ lamFMap k (lamFold a) l
 
 -- Generate a specialized coalgebra from a generic one
 lamCoalg :: (Integer -> r -> Either Integer (Either r (r, r)))
@@ -80,11 +80,11 @@ lamCoalg f k r = case f k r of
   Right (Left r) -> Lam r
   Right (Right (r1, r2)) -> App r1 r2
 
-lamAna :: (Integer -> r -> LamF r) -> Integer -> r -> Lam
-lamAna c k = Fix . lamFMap k (lamAna c) .c k
+lamUnfold :: (Integer -> r -> LamF r) -> Integer -> r -> Lam
+lamUnfold c k = Fix . lamFMap k (lamUnfold c) .c k
 
 lamToNat :: Lam -> Integer
-lamToNat = lamCata (lamAlg lamToNatAlg) 0 where
+lamToNat = lamFold (lamAlg lamToNatAlg) 0 where
   lamToNatAlg :: Integer
               -> Either Integer (Either Integer (Integer, Integer))
               -> Integer
@@ -94,7 +94,7 @@ lamToNat = lamCata (lamAlg lamToNatAlg) 0 where
                 . bimap id natTimesNatToNat)
 
 natToLam :: Integer -> Lam
-natToLam = lamAna (lamCoalg natToLamCoalg) 0 where
+natToLam = lamUnfold (lamCoalg natToLamCoalg) 0 where
   natToLamCoalg :: Integer -> Integer
                 -> Either Integer (Either Integer (Integer, Integer))
   natToLamCoalg i =
@@ -135,11 +135,11 @@ aLamAlg f k (AApp r1 r2) = f k (Right (r1, r2))
 
 
 
-nLamCata :: (Integer -> NLamF r -> r) -> Integer -> NLam -> r
-nLamCata a k (Fix l) = a k $ nLamFMap k (nLamCata a) l
+nLamFold :: (Integer -> NLamF r -> r) -> Integer -> NLam -> r
+nLamFold a k (Fix l) = a k $ nLamFMap k (nLamFold a) l
 
-aLamCata :: (Integer -> ALamF r -> r) -> Integer -> ALam -> r
-aLamCata a k (Fix l) = a k $ aLamFMap k (aLamCata a) l
+aLamFold :: (Integer -> ALamF r -> r) -> Integer -> ALam -> r
+aLamFold a k (Fix l) = a k $ aLamFMap k (aLamFold a) l
 
 
 
@@ -159,11 +159,11 @@ aLamCoalg f k r = case f k r of
 
 
 
-nLamAna :: (Integer -> r -> NLamF r) -> Integer -> r -> NLam
-nLamAna c k = Fix . nLamFMap k (nLamAna c) . c k
+nLamUnfold :: (Integer -> r -> NLamF r) -> Integer -> r -> NLam
+nLamUnfold c k = Fix . nLamFMap k (nLamUnfold c) . c k
 
-aLamAna :: (Integer -> r -> ALamF r) -> Integer -> r -> ALam
-aLamAna c k = Fix . aLamFMap k (aLamAna c) . c k
+aLamUnfold :: (Integer -> r -> ALamF r) -> Integer -> r -> ALam
+aLamUnfold c k = Fix . aLamFMap k (aLamUnfold c) . c k
 
 
 
@@ -185,10 +185,10 @@ natToNLam = Fix . NLam . natToNLamP 1 where
     . natToNPlusNat k
 
   natToNLamP :: Integer -> Integer -> NLam
-  natToNLamP = nLamAna (nLamCoalg natToNLamCoalg)
+  natToNLamP = nLamUnfold (nLamCoalg natToNLamCoalg)
 
   natToALam :: Integer -> Integer -> ALam
-  natToALam = aLamAna (aLamCoalg natToALamCoalg)
+  natToALam = aLamUnfold (aLamCoalg natToALamCoalg)
 
 
 
@@ -211,10 +211,10 @@ nLamToNat (Fix (NLam l)) = nLamToNatP 1 l where
                 . bimap id (nLamToNatP k))
 
   nLamToNatP :: Integer -> NLam -> Integer
-  nLamToNatP = nLamCata (nLamAlg nLamToNatAlg)
+  nLamToNatP = nLamFold (nLamAlg nLamToNatAlg)
 
   aLamToNat :: Integer -> ALam -> Integer
-  aLamToNat = aLamCata (aLamAlg aLamToNatAlg) 
+  aLamToNat = aLamFold (aLamAlg aLamToNatAlg) 
 
 
 
@@ -225,7 +225,7 @@ eval :: Lam -> NLam
 eval a = spine a [] where
   -- Raise bound variables
   quote :: Integer -> Lam -> Lam
-  quote = lamCata quoteAlg where
+  quote = lamFold quoteAlg where
     quoteAlg :: Integer -> LamF Lam -> Lam
     quoteAlg n (Var x) | x >= n = Fix $ Var $ x + 1
                        | True   = Fix $ Var x
@@ -234,7 +234,7 @@ eval a = spine a [] where
 
   -- Substitute into an expression, for a variable, some value
   sub :: Integer -> Lam -> Lam -> Lam
-  sub = lamCata subAlg where
+  sub = lamFold subAlg where
     subAlg :: Integer -> LamF (Lam -> Lam) -> (Lam -> Lam)
     subAlg n (Var x) | x < n  = const $ Fix $ Var x
                      | x == n = id
