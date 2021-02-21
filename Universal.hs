@@ -242,15 +242,15 @@ eval a = spine a [] where
     subAlg n (App f1 f2) = \e -> Fix $ App (f1 e) (f2 e)
 
   spine :: Lam -> [Lam] -> LamN
-  spine (Fix (Lam e))   []     = Fix $ NLam $ eval e
+  spine (Fix (Lam e))   []     = Fix $ NLam $ spine e []
   spine (Fix (Lam e))   (e1:x) = spine (sub 0 e e1) x
   spine (Fix (App a b)) x      = spine a (b:x)
   spine (Fix (Var i))   []     = Fix $ NVar i
   spine e@(Fix (Var i)) x@(_:_) =
-    Fix $ NApp (afold e (reverse $ init x)) (eval (last x))
+    Fix $ NApp (afold e (reverse $ init x)) (spine (last x) [])
 
   afold :: Lam -> [Lam] -> LamA
-  afold x (b:y) = Fix $ AApp (afold x y) (eval b)
+  afold x (b:y) = Fix $ AApp (afold x y) (spine b [])
   afold (Fix (Var i)) [] = Fix $ AVar i
 
 -- A universal lambda function
