@@ -43,13 +43,13 @@ natPlusNatToNat (Right i) = 2 * i + 1
 
 -- ℕ ≅ Fin n + ℕ
 natToNPlusNat :: Integer -> Integer -> Either Integer Integer
-natToNPlusNat i n | n < i = Left n
-                  | True  = Right $ n - i
+natToNPlusNat n i | i < n = Left i
+                  | True  = Right $ i - n
 
 -- Fin n + ℕ ≅ ℕ
 nPlusNatToNat :: Integer -> Either Integer Integer -> Integer
-nPlusNatToNat i (Left n)  = n
-nPlusNatToNat i (Right n) = n + i
+nPlusNatToNat n (Left i)  = i
+nPlusNatToNat n (Right i) = i + n
 
 -- Section 1: Defining an isomorphism between ℕ and lambda expressions
 data LamF r = Var Integer | Lam r | App r r
