@@ -112,58 +112,58 @@ type ALam = Fix ALamF
 
 
 -- Fibrational functorial maps
-lamNFMap :: Integer -> (Integer -> a -> b) -> NLamF a -> NLamF b
-lamNFMap k f (NVar i) = NVar i
-lamNFMap k f (NLam r) = NLam $ f (k+1) r
-lamNFMap k f (NApp r1 r2) = NApp r1 (f k r2)
+nLamFMap :: Integer -> (Integer -> a -> b) -> NLamF a -> NLamF b
+nLamFMap k f (NVar i) = NVar i
+nLamFMap k f (NLam r) = NLam $ f (k+1) r
+nLamFMap k f (NApp r1 r2) = NApp r1 (f k r2)
 
-lamAFMap :: Integer -> (Integer -> a -> b) -> ALamF a -> ALamF b
-lamAFMap k f (AVar i) = AVar i
-lamAFMap k f (AApp r1 r2) = AApp (f k r1) r2
+aLamFMap :: Integer -> (Integer -> a -> b) -> ALamF a -> ALamF b
+aLamFMap k f (AVar i) = AVar i
+aLamFMap k f (AApp r1 r2) = AApp (f k r1) r2
 
 -- Generate a specialized algebra from a generic one
-lamNAlg :: (Integer -> Either Integer (Either r (ALam, r)) -> r)
+nLamAlg :: (Integer -> Either Integer (Either r (ALam, r)) -> r)
         -> Integer -> NLamF r -> r
-lamNAlg f k (NVar i) = f k (Left i)
-lamNAlg f k (NLam r) = f k (Right $ Left r)
-lamNAlg f k (NApp r1 r2) = f k (Right $ Right (r1, r2))
+nLamAlg f k (NVar i) = f k (Left i)
+nLamAlg f k (NLam r) = f k (Right $ Left r)
+nLamAlg f k (NApp r1 r2) = f k (Right $ Right (r1, r2))
 
-lamAAlg :: (Integer -> Either Integer (r, NLam) -> r)
+aLamAlg :: (Integer -> Either Integer (r, NLam) -> r)
         -> Integer -> ALamF r -> r
-lamAAlg f k (AVar i) = f k (Left i)
-lamAAlg f k (AApp r1 r2) = f k (Right (r1, r2))
+aLamAlg f k (AVar i) = f k (Left i)
+aLamAlg f k (AApp r1 r2) = f k (Right (r1, r2))
 
 
 
-lamNCata :: (Integer -> NLamF r -> r) -> Integer -> NLam -> r
-lamNCata a k (Fix l) = a k $ lamNFMap k (lamNCata a) l
+nLamCata :: (Integer -> NLamF r -> r) -> Integer -> NLam -> r
+nLamCata a k (Fix l) = a k $ nLamFMap k (nLamCata a) l
 
-lamACata :: (Integer -> ALamF r -> r) -> Integer -> ALam -> r
-lamACata a k (Fix l) = a k $ lamAFMap k (lamACata a) l
+aLamCata :: (Integer -> ALamF r -> r) -> Integer -> ALam -> r
+aLamCata a k (Fix l) = a k $ aLamFMap k (aLamCata a) l
 
 
 
 -- Generate a specialized coalgebra from a generic one
-lamNCoalg :: (Integer -> r -> Either Integer (Either r (ALam, r)))
+nLamCoalg :: (Integer -> r -> Either Integer (Either r (ALam, r)))
           -> Integer -> r -> NLamF r
-lamNCoalg f k r = case f k r of
+nLamCoalg f k r = case f k r of
   Left i -> NVar i
   Right (Left r) -> NLam r
   Right (Right (r1, r2)) -> NApp r1 r2
 
-lamACoalg :: (Integer -> r -> Either Integer (r, NLam)) ->
+aLamCoalg :: (Integer -> r -> Either Integer (r, NLam)) ->
              Integer -> r -> ALamF r
-lamACoalg f k r = case f k r of
+aLamCoalg f k r = case f k r of
   Left i -> AVar i
   Right (r1, r2) -> AApp r1 r2
 
 
 
-lamNAna :: (Integer -> r -> NLamF r) -> Integer -> r -> NLam
-lamNAna c k = Fix . lamNFMap k (lamNAna c) . c k
+nLamAna :: (Integer -> r -> NLamF r) -> Integer -> r -> NLam
+nLamAna c k = Fix . nLamFMap k (nLamAna c) . c k
 
-lamAAna :: (Integer -> r -> ALamF r) -> Integer -> r -> ALam
-lamAAna c k = Fix . lamAFMap k (lamAAna c) . c k
+aLamAna :: (Integer -> r -> ALamF r) -> Integer -> r -> ALam
+aLamAna c k = Fix . aLamFMap k (aLamAna c) . c k
 
 
 
@@ -185,36 +185,36 @@ natToNLam = Fix . NLam . natToNLamP 1 where
     . natToNPlusNat k
 
   natToNLamP :: Integer -> Integer -> NLam
-  natToNLamP = lamNAna (lamNCoalg natToNLamCoalg)
+  natToNLamP = nLamAna (nLamCoalg natToNLamCoalg)
 
   natToALam :: Integer -> Integer -> ALam
-  natToALam = lamAAna (lamACoalg natToALamCoalg)
+  natToALam = aLamAna (aLamCoalg natToALamCoalg)
 
 
 
 -- The isomorphism to ℕ
-lamNToNat :: NLam -> Integer
-lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
-  lamNToNatAlg :: Integer
+nLamToNat :: NLam -> Integer
+nLamToNat (Fix (NLam l)) = nLamToNatP 1 l where
+  nLamToNatAlg :: Integer
                -> Either Integer (Either Integer (ALam, Integer))
                -> Integer
-  lamNToNatAlg k =
+  nLamToNatAlg k =
     nPlusNatToNat k
     . bimap id (natPlusNatToNat
                 . bimap id (natTimesNatToNat
-                            . bimap (lamAToNat k) id))
+                            . bimap (aLamToNat k) id))
 
-  lamAToNatAlg :: Integer -> Either Integer (Integer, NLam) -> Integer
-  lamAToNatAlg k =
+  aLamToNatAlg :: Integer -> Either Integer (Integer, NLam) -> Integer
+  aLamToNatAlg k =
     nPlusNatToNat k
     . bimap id (natTimesNatToNat
-                . bimap id (lamNToNatP k))
+                . bimap id (nLamToNatP k))
 
-  lamNToNatP :: Integer -> NLam -> Integer
-  lamNToNatP = lamNCata (lamNAlg lamNToNatAlg)
+  nLamToNatP :: Integer -> NLam -> Integer
+  nLamToNatP = nLamCata (nLamAlg nLamToNatAlg)
 
-  lamAToNat :: Integer -> ALam -> Integer
-  lamAToNat = lamACata (lamAAlg lamAToNatAlg) 
+  aLamToNat :: Integer -> ALam -> Integer
+  aLamToNat = aLamCata (aLamAlg aLamToNatAlg) 
 
 
 
@@ -256,7 +256,7 @@ eval a = spine a [] where
 
 -- A universal lambda function
 u :: Integer -> Integer
-u = lamNToNat . eval . natToLam
+u = nLamToNat . eval . natToLam
 
 -- As a function between binary strings
 ub = bin . u . unbin where
