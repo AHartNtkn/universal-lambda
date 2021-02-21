@@ -62,8 +62,8 @@ lamFMap k f (Lam r) = Lam $ f (k+1) r
 lamFMap k f (App r1 r2) = App (f k r1) (f k r2)
 
 -- Generate a specialized algebra from a generic one
-lamAlg :: (Integer -> Either Integer (Either r (r, r)) -> r) ->
-            Integer -> LamF r -> r
+lamAlg :: (Integer -> Either Integer (Either r (r, r)) -> r)
+       -> Integer -> LamF r -> r
 lamAlg f k (Var i) = f k (Left i)
 lamAlg f k (Lam r) = f k (Right $ Left r)
 lamAlg f k (App r1 r2) = f k (Right $ Right (r1, r2))
@@ -72,8 +72,8 @@ lamCata :: (Integer -> LamF r -> r) -> Integer -> Lam -> r
 lamCata a k (Fix l) = a k $ lamFMap k (lamCata a) l
 
 -- Generate a specialized coalgebra from a generic one
-lamCoalg :: (Integer -> r -> Either Integer (Either r (r, r))) ->
-          Integer -> r -> LamF r
+lamCoalg :: (Integer -> r -> Either Integer (Either r (r, r)))
+         -> Integer -> r -> LamF r
 lamCoalg f k r = case f k r of
   Left i -> Var i
   Right (Left r) -> Lam r
@@ -84,6 +84,9 @@ lamAna c k = Fix . lamFMap k (lamAna c) .c k
 
 lamToNat :: Lam -> Integer
 lamToNat = lamCata (lamAlg lamToNatAlg) 0 where
+  lamToNatAlg :: Integer
+              -> Either Integer (Either Integer (Integer, Integer))
+              -> Integer
   lamToNatAlg i =
     nPlusNatToNat i
     . bimap id (natPlusNatToNat
@@ -91,6 +94,8 @@ lamToNat = lamCata (lamAlg lamToNatAlg) 0 where
 
 natToLam :: Integer -> Lam
 natToLam = lamAna (lamCoalg natToLamCoalg) 0 where
+  natToLamCoalg :: Integer -> Integer
+                -> Either Integer (Either Integer (Integer, Integer))
   natToLamCoalg i =
     bimap id (bimap id natToNatTimesNat
               . natToNatPlusNat)
@@ -116,14 +121,14 @@ lamAFMap k f (AVar i) = AVar i
 lamAFMap k f (AApp r1 r2) = AApp (f k r1) r2
 
 -- Generate a specialized algebra from a generic one
-lamNAlg :: (Integer -> Either Integer (Either r (LamA, r)) -> r) ->
-            Integer -> LamNF r -> r
+lamNAlg :: (Integer -> Either Integer (Either r (LamA, r)) -> r)
+        -> Integer -> LamNF r -> r
 lamNAlg f k (NVar i) = f k (Left i)
 lamNAlg f k (NLam r) = f k (Right $ Left r)
 lamNAlg f k (NApp r1 r2) = f k (Right $ Right (r1, r2))
 
-lamAAlg :: (Integer -> Either Integer (r, LamN) -> r) ->
-            Integer -> LamAF r -> r
+lamAAlg :: (Integer -> Either Integer (r, LamN) -> r)
+        -> Integer -> LamAF r -> r
 lamAAlg f k (AVar i) = f k (Left i)
 lamAAlg f k (AApp r1 r2) = f k (Right (r1, r2))
 
@@ -138,8 +143,8 @@ lamACata a k (Fix l) = a k $ lamAFMap k (lamACata a) l
 
 
 -- Generate a specialized coalgebra from a generic one
-lamNCoalg :: (Integer -> r -> Either Integer (Either r (LamA, r))) ->
-          Integer -> r -> LamNF r
+lamNCoalg :: (Integer -> r -> Either Integer (Either r (LamA, r)))
+          -> Integer -> r -> LamNF r
 lamNCoalg f k r = case f k r of
   Left i -> NVar i
   Right (Left r) -> NLam r
@@ -164,8 +169,8 @@ lamAAna c k = Fix . lamAFMap k (lamAAna c) . c k
 -- The isomorphism from ℕ
 natToLamN :: Integer -> LamN
 natToLamN = Fix . NLam . natToLamNP 1 where
-  natToLamNCoalg :: Integer -> Integer ->
-                    Either Integer (Either Integer (LamA, Integer))
+  natToLamNCoalg :: Integer -> Integer
+                 -> Either Integer (Either Integer (LamA, Integer))
   natToLamNCoalg k =
     bimap id (bimap id (bimap (natToLamA k) id
                         . natToNatTimesNat)
@@ -189,8 +194,9 @@ natToLamN = Fix . NLam . natToLamNP 1 where
 -- The isomorphism to ℕ
 lamNToNat :: LamN -> Integer
 lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
-  lamNToNatAlg :: Integer ->
-                  Either Integer (Either Integer (LamA, Integer)) -> Integer
+  lamNToNatAlg :: Integer
+               -> Either Integer (Either Integer (LamA, Integer))
+               -> Integer
   lamNToNatAlg k =
     nPlusNatToNat k
     . bimap id (natPlusNatToNat
