@@ -55,11 +55,6 @@ nPlusNatToNat i (Right n) = n + i
 data LamF r = Var Integer | Lam r | App r r
 type Lam = Fix LamF
 
-showLam :: Lam -> String
-showLam (Fix (Var i)) = show i
-showLam (Fix (Lam r)) = 'L':showLam r
-showLam (Fix (App r1 r2)) = ('(' : showLam r1) ++ (' ' : showLam r2) ++ ")"
-
 -- Fibrational functorial map over LamF
 lamFMap :: Integer -> (Integer -> a -> b) -> LamF a -> LamF b
 lamFMap k f (Var i) = Var i
@@ -108,17 +103,6 @@ data LamNF r = NVar Integer | NLam r | NApp LamA r
 type LamN = Fix LamNF
 data LamAF r = AVar Integer | AApp r LamN
 type LamA = Fix LamAF
-
-
-
-showLamN :: LamN -> String
-showLamN (Fix (NVar i)) = show i
-showLamN (Fix (NLam r)) = 'L':showLamN r
-showLamN (Fix (NApp r1 r2)) = ('(' : showLamA r1) ++ (' ' : showLamN r2) ++ ")"
-
-showLamA :: LamA -> String
-showLamA (Fix (AVar i)) = show i
-showLamA (Fix (AApp r1 r2)) = ('(' : showLamA r1) ++ (' ' : showLamN r2) ++ ")"
 
 
 
