@@ -52,6 +52,7 @@ nPlusNatToNat n (Left i)  = i
 nPlusNatToNat n (Right i) = i + n
 
 -- Section 1: Defining an isomorphism between ℕ and lambda expressions
+
 data LamF r = Var Integer | Lam r | App r r
 type Lam = Fix LamF
 
