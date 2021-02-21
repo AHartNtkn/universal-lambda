@@ -105,98 +105,98 @@ natToLam = lamAna (lamCoalg natToLamCoalg) 0 where
 -- Section 2: Defining an isomorphism between ℕ and normalized lambda expressions
 
 -- The type of normalized lambda expressions.
-data LamNF r = NVar Integer | NLam r | NApp LamA r
-type LamN = Fix LamNF
-data LamAF r = AVar Integer | AApp r LamN
-type LamA = Fix LamAF
+data NLamF r = NVar Integer | NLam r | NApp ALam r
+type NLam = Fix NLamF
+data ALamF r = AVar Integer | AApp r NLam
+type ALam = Fix ALamF
 
 
 -- Fibrational functorial maps
-lamNFMap :: Integer -> (Integer -> a -> b) -> LamNF a -> LamNF b
+lamNFMap :: Integer -> (Integer -> a -> b) -> NLamF a -> NLamF b
 lamNFMap k f (NVar i) = NVar i
 lamNFMap k f (NLam r) = NLam $ f (k+1) r
 lamNFMap k f (NApp r1 r2) = NApp r1 (f k r2)
 
-lamAFMap :: Integer -> (Integer -> a -> b) -> LamAF a -> LamAF b
+lamAFMap :: Integer -> (Integer -> a -> b) -> ALamF a -> ALamF b
 lamAFMap k f (AVar i) = AVar i
 lamAFMap k f (AApp r1 r2) = AApp (f k r1) r2
 
 -- Generate a specialized algebra from a generic one
-lamNAlg :: (Integer -> Either Integer (Either r (LamA, r)) -> r)
-        -> Integer -> LamNF r -> r
+lamNAlg :: (Integer -> Either Integer (Either r (ALam, r)) -> r)
+        -> Integer -> NLamF r -> r
 lamNAlg f k (NVar i) = f k (Left i)
 lamNAlg f k (NLam r) = f k (Right $ Left r)
 lamNAlg f k (NApp r1 r2) = f k (Right $ Right (r1, r2))
 
-lamAAlg :: (Integer -> Either Integer (r, LamN) -> r)
-        -> Integer -> LamAF r -> r
+lamAAlg :: (Integer -> Either Integer (r, NLam) -> r)
+        -> Integer -> ALamF r -> r
 lamAAlg f k (AVar i) = f k (Left i)
 lamAAlg f k (AApp r1 r2) = f k (Right (r1, r2))
 
 
 
-lamNCata :: (Integer -> LamNF r -> r) -> Integer -> LamN -> r
+lamNCata :: (Integer -> NLamF r -> r) -> Integer -> NLam -> r
 lamNCata a k (Fix l) = a k $ lamNFMap k (lamNCata a) l
 
-lamACata :: (Integer -> LamAF r -> r) -> Integer -> LamA -> r
+lamACata :: (Integer -> ALamF r -> r) -> Integer -> ALam -> r
 lamACata a k (Fix l) = a k $ lamAFMap k (lamACata a) l
 
 
 
 -- Generate a specialized coalgebra from a generic one
-lamNCoalg :: (Integer -> r -> Either Integer (Either r (LamA, r)))
-          -> Integer -> r -> LamNF r
+lamNCoalg :: (Integer -> r -> Either Integer (Either r (ALam, r)))
+          -> Integer -> r -> NLamF r
 lamNCoalg f k r = case f k r of
   Left i -> NVar i
   Right (Left r) -> NLam r
   Right (Right (r1, r2)) -> NApp r1 r2
 
-lamACoalg :: (Integer -> r -> Either Integer (r, LamN)) ->
-             Integer -> r -> LamAF r
+lamACoalg :: (Integer -> r -> Either Integer (r, NLam)) ->
+             Integer -> r -> ALamF r
 lamACoalg f k r = case f k r of
   Left i -> AVar i
   Right (r1, r2) -> AApp r1 r2
 
 
 
-lamNAna :: (Integer -> r -> LamNF r) -> Integer -> r -> LamN
+lamNAna :: (Integer -> r -> NLamF r) -> Integer -> r -> NLam
 lamNAna c k = Fix . lamNFMap k (lamNAna c) . c k
 
-lamAAna :: (Integer -> r -> LamAF r) -> Integer -> r -> LamA
+lamAAna :: (Integer -> r -> ALamF r) -> Integer -> r -> ALam
 lamAAna c k = Fix . lamAFMap k (lamAAna c) . c k
 
 
 
 -- The isomorphism from ℕ
-natToLamN :: Integer -> LamN
-natToLamN = Fix . NLam . natToLamNP 1 where
-  natToLamNCoalg :: Integer -> Integer
-                 -> Either Integer (Either Integer (LamA, Integer))
-  natToLamNCoalg k =
-    bimap id (bimap id (bimap (natToLamA k) id
+natToNLam :: Integer -> NLam
+natToNLam = Fix . NLam . natToNLamP 1 where
+  natToNLamCoalg :: Integer -> Integer
+                 -> Either Integer (Either Integer (ALam, Integer))
+  natToNLamCoalg k =
+    bimap id (bimap id (bimap (natToALam k) id
                         . natToNatTimesNat)
               . natToNatPlusNat)
     . natToNPlusNat k
 
-  natToLamACoalg :: Integer -> Integer -> Either Integer (Integer, LamN)
-  natToLamACoalg k =
-    bimap id (bimap id (natToLamNP k)
+  natToALamCoalg :: Integer -> Integer -> Either Integer (Integer, NLam)
+  natToALamCoalg k =
+    bimap id (bimap id (natToNLamP k)
               . natToNatTimesNat)
     . natToNPlusNat k
 
-  natToLamNP :: Integer -> Integer -> LamN
-  natToLamNP = lamNAna (lamNCoalg natToLamNCoalg)
+  natToNLamP :: Integer -> Integer -> NLam
+  natToNLamP = lamNAna (lamNCoalg natToNLamCoalg)
 
-  natToLamA :: Integer -> Integer -> LamA
-  natToLamA = lamAAna (lamACoalg natToLamACoalg)
+  natToALam :: Integer -> Integer -> ALam
+  natToALam = lamAAna (lamACoalg natToALamCoalg)
 
 
 
 -- The isomorphism to ℕ
-lamNToNat :: LamN -> Integer
+lamNToNat :: NLam -> Integer
 lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
   lamNToNatAlg :: Integer
-               -> Either Integer (Either Integer (LamA, Integer))
+               -> Either Integer (Either Integer (ALam, Integer))
                -> Integer
   lamNToNatAlg k =
     nPlusNatToNat k
@@ -204,16 +204,16 @@ lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
                 . bimap id (natTimesNatToNat
                             . bimap (lamAToNat k) id))
 
-  lamAToNatAlg :: Integer -> Either Integer (Integer, LamN) -> Integer
+  lamAToNatAlg :: Integer -> Either Integer (Integer, NLam) -> Integer
   lamAToNatAlg k =
     nPlusNatToNat k
     . bimap id (natTimesNatToNat
                 . bimap id (lamNToNatP k))
 
-  lamNToNatP :: Integer -> LamN -> Integer
+  lamNToNatP :: Integer -> NLam -> Integer
   lamNToNatP = lamNCata (lamNAlg lamNToNatAlg)
 
-  lamAToNat :: Integer -> LamA -> Integer
+  lamAToNat :: Integer -> ALam -> Integer
   lamAToNat = lamACata (lamAAlg lamAToNatAlg) 
 
 
@@ -221,7 +221,7 @@ lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
 -- Section 3: Defining an evaluation function and completing our universal function.
 
 -- Evaluate to a normal form
-eval :: Lam -> LamN
+eval :: Lam -> NLam
 eval a = spine a [] where
   -- Raise bound variables
   quote :: Integer -> Lam -> Lam
@@ -242,7 +242,7 @@ eval a = spine a [] where
     subAlg n (Lam f) = Fix . Lam . f . quote 0
     subAlg n (App f1 f2) = \e -> Fix $ App (f1 e) (f2 e)
 
-  spine :: Lam -> [Lam] -> LamN
+  spine :: Lam -> [Lam] -> NLam
   spine (Fix (Lam e))   []     = Fix $ NLam $ spine e []
   spine (Fix (Lam e))   (e1:x) = spine (sub 0 e e1) x
   spine (Fix (App a b)) x      = spine a (b:x)
@@ -250,7 +250,7 @@ eval a = spine a [] where
   spine e@(Fix (Var i)) x@(_:_) =
     Fix $ NApp (afold e (reverse $ init x)) (spine (last x) [])
 
-  afold :: Lam -> [Lam] -> LamA
+  afold :: Lam -> [Lam] -> ALam
   afold x (b:y) = Fix $ AApp (afold x y) (spine b [])
   afold (Fix (Var i)) [] = Fix $ AVar i
 
