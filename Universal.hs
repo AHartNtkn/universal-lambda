@@ -269,64 +269,7 @@ eval a = spine a [] where
 u :: Integer -> Integer
 u = lamNToNat . eval . natToLam
 
--- Universal function as a function between binary strings
+-- As a function between binary strings
 ub = bin . u . unbin where
   unbin b = unDigits 2 (1:b) - 1
   bin n = tail $ digits 2 (n+1)
-
--- fana :: Corecursive t => (a -> Base t a) -> a -> t
-
-{-
-NatTimesNatToNat[{0, 0}] := 0
-NatTimesNatToNat[{x1_, x2_}] :=
- Block[{l, b1, b2},
-  l = IntegerLength[Max[x1, x2], 2];
-  b1 = IntegerDigits[x1, 2, l];
-  b2 = IntegerDigits[x2, 2, l];
-  
-  FromDigits[Riffle[b1, b2], 2]
-  ]
--}
-
-{-
--- Pad binary string to appropriate length
-pad :: Int -> Bin -> Bin
-pad 0 x = x
-pad i x = x ++ True : take (i-length x-1) (repeat False)
-
-fuse :: (Bin, Bin) -> Bin
-fuse (b1, b2) = case compare (length b2) (length b1) of
-  GT -> interleave (pad (length b2) b1) b2 
-  LT -> interleave b1 (pad (length b1) b2)
-  EQ -> interleave b1 (b2 ++ [True])
-
-unpad :: Bin -> Bin
-unpad [] = []
-unpad (False:xs) = False:unpad xs
-unpad (True:xs) = go (Z.Zip [] xs) where
-  go (Z.Zip r []) = []
-  go (Z.Zip r (True:xs)) = True : (r ++ go (Z.Zip [] xs))
-  go (Z.Zip r (False:xs)) = go $ Z.Zip (False:r) xs
-
-uninterleave :: Bin -> (Bin, Bin)
-uninterleave (x:y:xs) = case uninterleave xs of
-  (b1, b2) -> (x:b1, y:b2)
-uninterleave (x:[]) = ([x], [])
-uninterleave [] = ([], [])
-
-unfuse :: Bin -> (Bin, Bin)
-unfuse b = case (mod (length b) 2 == 0, uninterleave b) of
-  (True,  (b1, b2)) -> (b1, unpad b2)
-  (False, (b1, b2)) -> (unpad b1, b2)
-
-testListp :: Int -> [Bin]
-testListp 0 = [[]]
-testListp i = testListp (i-1) >>= \x -> [True:x, False:x]
-
-testList :: Int -> [Bin]
-testList i = concat $ map testListp [0..i+1]
-
--}
-
-
-
