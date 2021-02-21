@@ -105,7 +105,6 @@ data LamAF r = AVar Integer | AApp r LamN
 type LamA = Fix LamAF
 
 
-
 -- Fibrational functorial maps
 lamNFMap :: Integer -> (Integer -> a -> b) -> LamNF a -> LamNF b
 lamNFMap k f (NVar i) = NVar i
@@ -212,7 +211,6 @@ lamNToNat (Fix (NLam l)) = lamNToNatP 1 l where
 
 
 
-
 -- Section 3: Defining an evaluation function and completing our universal function.
 
 -- Evaluate to a normal form
@@ -227,9 +225,9 @@ eval a = spine a [] where
     quoteAlg n (Lam r)  = Fix $ Lam r
     quoteAlg n (App r1 r2) = Fix $ App r1 r2
 
-  -- Substitute e into l for variable n
-  sub :: Lam -> Integer -> Lam -> Lam
-  sub e n l = lamCata subAlg n l e where
+  -- Substitute into an expression, for a variable, some value
+  sub :: Integer -> Lam -> Lam -> Lam
+  sub = lamCata subAlg where
     subAlg :: Integer -> LamF (Lam -> Lam) -> (Lam -> Lam)
     subAlg n (Var x) | x < n  = const $ Fix $ Var x
                      | x == n = id
@@ -239,7 +237,7 @@ eval a = spine a [] where
 
   spine :: Lam -> [Lam] -> LamN
   spine (Fix (Lam e))   []     = Fix $ NLam $ eval e
-  spine (Fix (Lam e))   (e1:x) = spine (sub e1 0 e) x
+  spine (Fix (Lam e))   (e1:x) = spine (sub 0 e e1) x
   spine (Fix (App a b)) x      = spine a (b:x)
   spine (Fix (Var i))   []     = Fix $ NVar i
   spine e@(Fix (Var i)) x@(_:_) =
