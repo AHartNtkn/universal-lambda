@@ -267,16 +267,16 @@ ub = bin . u . unbin where
 
 -- Convert a prefix-free code into a natural number
 decodePrefix :: [Integer] -> Integer
-decodePrefix (x:y:r) = unDigits 2 (1:x:y:odds r) - 4 where
+decodePrefix (x:r) = unDigits 2 (1:x:odds r) - 2 where
   odds (x:y:r) = y:odds r
   odds (y:[])  = []
 
 -- Convert a natural number into a prefix-free code
 encodePrefix :: Integer -> [Integer]
-encodePrefix i = finish $ tail (digits 2 (i + 4)) where
-  finish (x:y:r) = x:y:go r
-  go (x:r) = 1:x:go r
-  go [] = [0]
+encodePrefix i = finish $ tail (digits 2 (i + 2)) where
+  finish [] = [0]
+  finish (x:[]) = x:0:[]
+  finish (x:r) = x:1:finish r
 
 -- A prefix-free universal function
 upf = bin . u . decodePrefix where
