@@ -274,7 +274,6 @@ decodePrefix (x:r) = unDigits 2 (1:x:odds r) - 2 where
 -- Convert a natural number into a prefix-free code
 encodePrefix :: Integer -> [Integer]
 encodePrefix i = finish $ tail (digits 2 (i + 2)) where
-  finish [] = [0]
   finish (x:[]) = x:0:[]
   finish (x:r) = x:1:finish r
 
