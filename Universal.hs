@@ -273,9 +273,9 @@ decodePrefix r = unDigits 2 (1:evens r) - 2 where
 
 -- Convert a natural number into a prefix-free code
 encodePrefix :: Integer -> [Integer]
-encodePrefix i = finish $ tail (digits 2 (i + 2)) where
-  finish (x:[]) = x:0:[]
-  finish (x:r)  = x:1:finish r
+encodePrefix i = pad $ tail (digits 2 (i + 2)) where
+  pad (x:[]) = x:0:[]
+  pad (x:r)  = x:1:pad r
 
 -- A prefix-free universal function
 upf = bin . u . decodePrefix where
