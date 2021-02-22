@@ -269,7 +269,7 @@ ub = bin . u . unbin where
 decodePrefix :: [Integer] -> Integer
 decodePrefix r = unDigits 2 (1:evens r) - 2 where
   evens (x:y:r) = x:evens r
-  evens []  = []
+  evens [] = []
 
 -- Convert a natural number into a prefix-free code
 encodePrefix :: Integer -> [Integer]
