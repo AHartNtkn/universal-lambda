@@ -262,3 +262,22 @@ u = nLamToNat . eval . natToLam
 ub = bin . u . unbin where
   unbin b = unDigits 2 (1:b) - 1
   bin n = tail $ digits 2 (n+1)
+
+-- Section 4: Prefix-free codings
+
+-- Convert a prefix-free code into an integer
+decodePrefix :: [Integer] -> Integer
+decodePrefix (x:y:r) = unDigits 2 (1:x:y:odds r) - 4 where
+  odds (x:y:r) = y:odds r
+  odds (y:[])  = []
+
+-- Convert an integer into a prefix-free code
+encodePrefix :: Integer -> [Integer]
+encodePrefix i = finish $ tail (digits 2 (i + 4)) where
+  finish (x:y:r) = x:y:go r
+  go (x:r) = 1:x:go r
+  go [] = [0]
+
+-- A prefix-free universal function
+upf = bin . u . decodePrefix where
+  bin n = tail $ digits 2 (n+1)
