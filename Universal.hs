@@ -275,7 +275,7 @@ decodePrefix (x:r) = unDigits 2 (1:x:odds r) - 2 where
 encodePrefix :: Integer -> [Integer]
 encodePrefix i = finish $ tail (digits 2 (i + 2)) where
   finish (x:[]) = x:0:[]
-  finish (x:r) = x:1:finish r
+  finish (x:r)  = x:1:finish r
 
 -- A prefix-free universal function
 upf = bin . u . decodePrefix where
