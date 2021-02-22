@@ -265,13 +265,13 @@ ub = bin . u . unbin where
 
 -- Section 4: Prefix-free codings
 
--- Convert a prefix-free code into an integer
+-- Convert a prefix-free code into a natural number
 decodePrefix :: [Integer] -> Integer
 decodePrefix (x:y:r) = unDigits 2 (1:x:y:odds r) - 4 where
   odds (x:y:r) = y:odds r
   odds (y:[])  = []
 
--- Convert an integer into a prefix-free code
+-- Convert a natural number into a prefix-free code
 encodePrefix :: Integer -> [Integer]
 encodePrefix i = finish $ tail (digits 2 (i + 4)) where
   finish (x:y:r) = x:y:go r
