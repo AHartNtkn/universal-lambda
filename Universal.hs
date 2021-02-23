@@ -265,18 +265,16 @@ ub = bin . u . unbin where
 
 -- Section 4: Prefix-free codings
 
--- Convert a prefix-free code into a natural number
-decodePrefix :: [Integer] -> Integer
-decodePrefix r = unDigits 2 (1:evens r) - 2 where
-  evens (x:y:r) = x:evens r
-  evens [] = []
+-- Convert a binary string into a rpefix-free code
+prefixFree :: [Integer] -> [Integer]
+prefixFree [] = [0]
+prefixFree (x:r) = 1:x:prefixFree r
 
--- Convert a natural number into a prefix-free code
-encodePrefix :: Integer -> [Integer]
-encodePrefix i = pad $ tail (digits 2 (i + 2)) where
-  pad (x:[]) = x:0:[]
-  pad (x:r)  = x:1:pad r
+-- Convert a prefix free code into a binary string
+unPrefixFree (x:[]) = []
+unPrefixFree (x:y:r) = y:unPrefixFree r
 
 -- A prefix-free universal function
-upf = bin . u . decodePrefix where
+upf = bin . u . unbin . unPrefixFree where
+  unbin b = unDigits 2 (1:b) - 1
   bin n = tail $ digits 2 (n+1)
