@@ -105,7 +105,7 @@ natToLam = lamUnfold (lamCoalg natToLamCoalg) 0 where
 -- Section 2: Defining an isomorphism between ℕ and normalized lambda expressions
 
 -- The type of normalized lambda expressions.
-data NLamF r = NVar Integer | NLam r | NApp ALam r
+data NLamF r = NA ALam | NLam r
 type NLam = Fix NLamF
 data ALamF r = AVar Integer | AApp r NLam
 type ALam = Fix ALamF
@@ -113,20 +113,18 @@ type ALam = Fix ALamF
 
 -- Fibrational functorial maps
 nLamFMap :: Integer -> (Integer -> a -> b) -> NLamF a -> NLamF b
-nLamFMap k f (NVar i) = NVar i
+nLamFMap k f (NA i) = NA i
 nLamFMap k f (NLam r) = NLam $ f (k+1) r
-nLamFMap k f (NApp r1 r2) = NApp r1 (f k r2)
 
 aLamFMap :: Integer -> (Integer -> a -> b) -> ALamF a -> ALamF b
 aLamFMap k f (AVar i) = AVar i
 aLamFMap k f (AApp r1 r2) = AApp (f k r1) r2
 
 -- Generate a specialized algebra from a generic one
-nLamAlg :: (Integer -> Either Integer (Either r (ALam, r)) -> r)
+nLamAlg :: (Integer -> Either ALam r -> r)
         -> Integer -> NLamF r -> r
-nLamAlg f k (NVar i) = f k (Left i)
-nLamAlg f k (NLam r) = f k (Right $ Left r)
-nLamAlg f k (NApp r1 r2) = f k (Right $ Right (r1, r2))
+nLamAlg f k (NA i) = f k (Left i)
+nLamAlg f k (NLam r) = f k (Right r)
 
 aLamAlg :: (Integer -> Either Integer (r, NLam) -> r)
         -> Integer -> ALamF r -> r
@@ -144,15 +142,14 @@ aLamFold a k (Fix l) = a k $ aLamFMap k (aLamFold a) l
 
 
 -- Generate a specialized coalgebra from a generic one
-nLamCoalg :: (Integer -> r -> Either Integer (Either r (ALam, r)))
+nLamCoalg :: (Integer -> r -> Either ALam r)
           -> Integer -> r -> NLamF r
 nLamCoalg f k r = case f k r of
-  Left i -> NVar i
-  Right (Left r) -> NLam r
-  Right (Right (r1, r2)) -> NApp r1 r2
+  Left i -> NA i
+  Right r -> NLam r
 
-aLamCoalg :: (Integer -> r -> Either Integer (r, NLam)) ->
-             Integer -> r -> ALamF r
+aLamCoalg :: (Integer -> r -> Either Integer (r, NLam))
+          -> Integer -> r -> ALamF r
 aLamCoalg f k r = case f k r of
   Left i -> AVar i
   Right (r1, r2) -> AApp r1 r2
@@ -170,13 +167,9 @@ aLamUnfold c k = Fix . aLamFMap k (aLamUnfold c) . c k
 -- The isomorphism from ℕ
 natToNLam :: Integer -> NLam
 natToNLam = Fix . NLam . natToNLamP 1 where
-  natToNLamCoalg :: Integer -> Integer
-                 -> Either Integer (Either Integer (ALam, Integer))
+  natToNLamCoalg :: Integer -> Integer -> Either ALam Integer
   natToNLamCoalg k =
-    bimap id (bimap id (bimap (natToALam k) id
-                        . natToNatTimesNat)
-              . natToNatPlusNat)
-    . natToNPlusNat k
+    bimap (natToALam k) id . natToNatPlusNat
 
   natToALamCoalg :: Integer -> Integer -> Either Integer (Integer, NLam)
   natToALamCoalg k =
@@ -195,14 +188,9 @@ natToNLam = Fix . NLam . natToNLamP 1 where
 -- The isomorphism to ℕ
 nLamToNat :: NLam -> Integer
 nLamToNat (Fix (NLam l)) = nLamToNatP 1 l where
-  nLamToNatAlg :: Integer
-               -> Either Integer (Either Integer (ALam, Integer))
-               -> Integer
+  nLamToNatAlg :: Integer -> Either ALam Integer -> Integer
   nLamToNatAlg k =
-    nPlusNatToNat k
-    . bimap id (natPlusNatToNat
-                . bimap id (natTimesNatToNat
-                            . bimap (aLamToNat k) id))
+    natPlusNatToNat . bimap (aLamToNat k) id
 
   aLamToNatAlg :: Integer -> Either Integer (Integer, NLam) -> Integer
   aLamToNatAlg k =
@@ -214,7 +202,7 @@ nLamToNat (Fix (NLam l)) = nLamToNatP 1 l where
   nLamToNatP = nLamFold (nLamAlg nLamToNatAlg)
 
   aLamToNat :: Integer -> ALam -> Integer
-  aLamToNat = aLamFold (aLamAlg aLamToNatAlg) 
+  aLamToNat = aLamFold (aLamAlg aLamToNatAlg)
 
 
 
@@ -246,9 +234,7 @@ eval a = spine a [] where
   spine (Fix (Lam e))   []     = Fix $ NLam $ spine e []
   spine (Fix (Lam e))   (e1:x) = spine (sub 0 e e1) x
   spine (Fix (App a b)) x      = spine a (b:x)
-  spine (Fix (Var i))   []     = Fix $ NVar i
-  spine e@(Fix (Var i)) x@(_:_) =
-    Fix $ NApp (afold e (reverse $ init x)) (spine (last x) [])
+  spine (Fix (Var i)) x = Fix $ NA $ afold (Fix (Var i)) (reverse x)
 
   afold :: Lam -> [Lam] -> ALam
   afold x (b:y) = Fix $ AApp (afold x y) (spine b [])
