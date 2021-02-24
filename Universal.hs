@@ -168,8 +168,7 @@ aLamUnfold c k = Fix . aLamFMap k (aLamUnfold c) . c k
 natToNLam :: Integer -> NLam
 natToNLam = Fix . NLam . natToNLamP 1 where
   natToNLamCoalg :: Integer -> Integer -> Either ALam Integer
-  natToNLamCoalg k =
-    bimap (natToALam k) id . natToNatPlusNat
+  natToNLamCoalg k = bimap (natToALam k) id . natToNatPlusNat
 
   natToALamCoalg :: Integer -> Integer -> Either Integer (Integer, NLam)
   natToALamCoalg k =
@@ -189,8 +188,7 @@ natToNLam = Fix . NLam . natToNLamP 1 where
 nLamToNat :: NLam -> Integer
 nLamToNat (Fix (NLam l)) = nLamToNatP 1 l where
   nLamToNatAlg :: Integer -> Either ALam Integer -> Integer
-  nLamToNatAlg k =
-    natPlusNatToNat . bimap (aLamToNat k) id
+  nLamToNatAlg k = natPlusNatToNat . bimap (aLamToNat k) id
 
   aLamToNatAlg :: Integer -> Either Integer (Integer, NLam) -> Integer
   aLamToNatAlg k =
