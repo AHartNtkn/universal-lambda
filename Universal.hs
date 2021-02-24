@@ -249,7 +249,7 @@ ub = bin . u . unbin where
 
 -- Section 4: Prefix-free codings
 
--- Convert a binary string into a rpefix-free code
+-- Convert a binary string into a prefix-free code
 prefixFree :: [Integer] -> [Integer]
 prefixFree [] = [0]
 prefixFree (x:r) = 1:x:prefixFree r
