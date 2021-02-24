@@ -232,11 +232,11 @@ eval a = spine a [] where
   spine (Fix (Lam e))   []     = Fix $ NLam $ spine e []
   spine (Fix (Lam e))   (e1:x) = spine (sub 0 e e1) x
   spine (Fix (App a b)) x      = spine a (b:x)
-  spine (Fix (Var i)) x = Fix $ NA $ afold (Fix (Var i)) (reverse x)
+  spine (Fix (Var i)) x = Fix $ NA $ afold i (reverse x)
 
-  afold :: Lam -> [Lam] -> ALam
-  afold x (b:y) = Fix $ AApp (afold x y) (spine b [])
-  afold (Fix (Var i)) [] = Fix $ AVar i
+  afold :: Integer -> [Lam] -> ALam
+  afold i (b:y) = Fix $ AApp (afold i y) (spine b [])
+  afold i []    = Fix $ AVar i
 
 -- A universal lambda function
 u :: Integer -> Integer
