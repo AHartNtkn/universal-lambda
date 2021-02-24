@@ -225,7 +225,7 @@ eval a = spine a [] where
     subAlg n (Var x) | x < n  = const $ Fix $ Var x
                      | x == n = id
                      | x > n  = const $ Fix $ Var $ x - 1
-    subAlg n (Lam f) = Fix . Lam . f . quote 0
+    subAlg n (Lam f)     = Fix . Lam . f . quote 0
     subAlg n (App f1 f2) = \e -> Fix $ App (f1 e) (f2 e)
 
   spine :: Lam -> [Lam] -> NLam
